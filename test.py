@@ -2,7 +2,9 @@ from scapy.layers.dot11 import *
 import logging
 import time
 import argparse
+import hashlib
 import json
+import csv
 
 # Devices which are known to be constantly probing
 IGNORE_LIST = {'00:00:00:00:00:00', '01:01:01:01:01:01'}
@@ -25,6 +27,15 @@ def signal_strength(pkt):
         return 'out of reach'
 
 
+def hash_mac(plaintext: str) -> str:
+    return hashlib.sha256(plaintext.encode()).hexdigest()
+
+
+def create_json(mac, signal):
+    macs = {'hash': hash_mac(mac), 'strength': signal}
+    return print(json.dumps(macs))
+
+
 def handle_packet(pkt):
     if not pkt.haslayer(Dot11ProbeReq):
         return
@@ -39,17 +50,21 @@ def handle_packet(pkt):
             if curmac in d:
                 logging.info(f"Probe Recorded from  {d[curmac]}  with MAC {curmac}   WiFi signal strength {strength}")
                 print(f"\033[95m Probe MAC Address: {pkt.addr2} from device \033[93m {d[curmac]}  \033[0m \033[92m")
+                create_json(curmac, strength)
 
             else:
                 logging.info('Probe Recorded from MAC ' + pkt.addr2 + " WiFi signal strength:" + strength)
-                print(f"\033[95m Device MAC:{pkt.addr2}  with SSID: {pkt.info} \033[92m  WiFi signal strength {strength} \033[92m \033[0m")
+                create_json(curmac, strength)
+
+                print(
+                    f"\033[95m Device MAC:{pkt.addr2}  with SSID: {pkt.info} \033[92m  WiFi signal strength {strength} \033[92m \033[0m")
 
 
 def main():
     logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', filename='wifiscanner.log',
                         level=logging.DEBUG)
-    logging.info('\n' + '\033[93m' + 'Wifi Scanner Initialized' + '\033[0m' + '\n')
-    print('\n' + '\033[93m' + 'Wifi Scanner Initialized' + '\033[0m' + '\n')
+    logging.info(f" \n \033[93m Wifi Scanner Initialized \033[0m \n")
+    print(f" \n  \033[93m  Wifi Scanner Initialized  \033[0m  \n")
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--interface', '-i', default='wlp2s0mon',
