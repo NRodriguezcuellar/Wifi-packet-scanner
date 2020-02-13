@@ -14,7 +14,7 @@ import json
 
 # Devices which are known to be constantly probing
 IGNORE_LIST = {'00:00:00:00:00:00', '01:01:01:01:01:01'}
-SEEN_DEVICES = []  # Devices which have had their probes recieved
+SEEN_DEVICES = set()  # Devices which have had their probes recieved
 d = {'00:00:00:00:00:00': 'Example MAC Address'}  # Dictionary of all named devices
 
 knownfile = open('knowndevices.txt', 'a')
