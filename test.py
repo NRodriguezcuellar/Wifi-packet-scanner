@@ -36,9 +36,9 @@ x = []
 
 def create_json(mac, signal):
     macs = {'hash': hash_mac(mac), 'strength': signal}
-    x.append(json.dumps(macs))
-    f = open('knowndevices.json', 'w')
-    f.write(json.dumps(x))
+    x.append(macs)
+    with open('knowndevices.json', 'w') as lol:
+        json.dump(x, lol)
     return print(x)
 
 
