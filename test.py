@@ -4,15 +4,11 @@ import time
 import argparse
 import hashlib
 import json
-import csv
-
-# Devices which are known to be constantly probing
-IGNORE_LIST = {'00:00:00:00:00:00', '01:01:01:01:01:01'}
-SEEN_DEVICES = set()  # Devices which have had their probes recieved
-d = {'00:00:00:00:00:00': 'Example MAC Address'}  # Dictionary of all named devices
-
-knownfile = open('knowndevices.txt', 'a')
-knownfile.write(str(d))
+import subprocess
+from datetime import datetime
+import asyncio
+import threading
+import requests
 
 
 # Writes a json file with a dictionary of all named devices
@@ -31,15 +27,26 @@ def hash_mac(plaintext: str) -> str:
     return hashlib.sha256(plaintext.encode()).hexdigest()
 
 
-x = []
+class Gateway:
+    def __init__(self):
+        self.cache = []
 
-
-def create_json(mac, signal):
-    macs = {'hash': hash_mac(mac), 'strength': signal}
-    x.append(macs)
-    with open('knowndevices.json', 'w') as lol:
-        json.dump(x, lol)
-    return print(x)
+    def send_update(self):
+        print(12312)
+        while True:
+            print('sending update')
+            print(self.cache)
+            api_key = "f015a18b3f8e051eb802ea5e459b67bbaec460f3f4bfacb6d0ff45b1afa1bd47"
+            url = "http://127.0.0.1:8000/update_macs"
+            headers = {"Authorization": f"Bearer {api_key}"}
+            payload = {
+                "data": self.cache,
+                "time": datetime.now().isoformat(),
+            }
+            r = requests.post(url, headers=headers, json=payload)
+            self.cache = []
+            assert r.ok
+            time.sleep(1)
 
 
 def handle_packet(pkt):
@@ -49,41 +56,22 @@ def handle_packet(pkt):
     if pkt.type == 0 and pkt.subtype == 4:  # subtype used to be 8 (APs) but is now 4 (Probe Requests)
         curmac = pkt.addr2
         curmac = curmac.upper()  # Assign variable to packet mac and make it uppercase
-        SEEN_DEVICES.add(curmac)  # Add to set of known devices (sets ignore duplicates so it is not a problem)
         strength = signal_strength(pkt)
+        GATEWAY.cache.append({'hash': hash_mac(curmac), 'strength': strength})
+        print(GATEWAY.cache)
 
-        if curmac not in IGNORE_LIST:  # If not registered as ignored
-            if curmac in d:
-                logging.info(
-                    f"Probe Recorded from  {d[curmac]}  with MAC {hash_mac(curmac)}   WiFi signal strength {strength}")
-                print(
-                    f"\033[95m Probe MAC Address: {hash_mac(curmac)} from device \033[93m {d[curmac]}  \033[0m \033[92m")
-                create_json(curmac, strength)
-
-            else:
-                logging.info('Probe Recorded from MAC ' + hash_mac(curmac) + " WiFi signal strength:" + strength)
-                create_json(curmac, strength)
-
-                print(
-                    f"\033[95m Device MAC:{hash_mac(curmac)}  with SSID: {pkt.info} \033[92m  WiFi signal strength {strength} \033[92m \033[0m")
+        if curmac == 'lol':  # If not registered as ignored
+            print(f"\033[95m Device MAC:{hash_mac(curmac)}  with SSID: {pkt.info} \033[92m  WiFi signal strength {strength} \033[92m \033[0m")
 
 
 def main():
-    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', filename='wifiscanner.log',
-                        level=logging.DEBUG)
-    logging.info(f" \n \033[93m Wifi Scanner Initialized \033[0m \n")
-    print(f" \n  \033[93m  Wifi Scanner Initialized  \033[0m  \n")
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--interface', '-i', default='wlp2s0mon',
-                        # Change mon0 to your monitor-mode enabled wifi interface
-                        help='monitor mode enabled interface')
-    args = parser.parse_args()
-    sniff(iface=args.interface, prn=handle_packet)  # start sniffing
-
-    while 1:
-        time.sleep(1)  # Supposed to make an infinite loop, but for some reason it stops after a while
+    #print(f" \n  \033[93m  Wifi Scanner Initialized  \033[0m  \n")
+    #t = threading.Thread(target=GATEWAY.send_update())
+    #t.start()
+    sniff(iface='wlp2s0mon', prn=handle_packet)  # start sniffing
+    #t.join()
 
 
 if __name__ == '__main__':
+    GATEWAY = Gateway()
     main()
