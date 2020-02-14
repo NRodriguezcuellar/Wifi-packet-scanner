@@ -12,7 +12,7 @@ SEEN_DEVICES = set()  # Devices which have had their probes recieved
 d = {'00:00:00:00:00:00': 'Example MAC Address'}  # Dictionary of all named devices
 
 knownfile = open('knowndevices.txt', 'a')
-knownfile.write(str(SEEN_DEVICES))
+knownfile.write(str(d))
 
 
 # Writes a json file with a dictionary of all named devices
@@ -31,9 +31,15 @@ def hash_mac(plaintext: str) -> str:
     return hashlib.sha256(plaintext.encode()).hexdigest()
 
 
+x = []
+
+
 def create_json(mac, signal):
     macs = {'hash': hash_mac(mac), 'strength': signal}
-    return print(json.dumps(macs))
+    x.append(json.dumps(macs))
+    f = open('knowndevices.json', 'w')
+    f.write(json.dumps(x))
+    return print(x)
 
 
 def handle_packet(pkt):
@@ -48,16 +54,18 @@ def handle_packet(pkt):
 
         if curmac not in IGNORE_LIST:  # If not registered as ignored
             if curmac in d:
-                logging.info(f"Probe Recorded from  {d[curmac]}  with MAC {curmac}   WiFi signal strength {strength}")
-                print(f"\033[95m Probe MAC Address: {pkt.addr2} from device \033[93m {d[curmac]}  \033[0m \033[92m")
+                logging.info(
+                    f"Probe Recorded from  {d[curmac]}  with MAC {hash_mac(curmac)}   WiFi signal strength {strength}")
+                print(
+                    f"\033[95m Probe MAC Address: {hash_mac(curmac)} from device \033[93m {d[curmac]}  \033[0m \033[92m")
                 create_json(curmac, strength)
 
             else:
-                logging.info('Probe Recorded from MAC ' + pkt.addr2 + " WiFi signal strength:" + strength)
+                logging.info('Probe Recorded from MAC ' + hash_mac(curmac) + " WiFi signal strength:" + strength)
                 create_json(curmac, strength)
 
                 print(
-                    f"\033[95m Device MAC:{pkt.addr2}  with SSID: {pkt.info} \033[92m  WiFi signal strength {strength} \033[92m \033[0m")
+                    f"\033[95m Device MAC:{hash_mac(curmac)}  with SSID: {pkt.info} \033[92m  WiFi signal strength {strength} \033[92m \033[0m")
 
 
 def main():
