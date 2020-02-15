@@ -1,17 +1,8 @@
 from scapy.layers.dot11 import *
-import logging
 import time
-import argparse
 import hashlib
-import json
-import subprocess
 from datetime import datetime
-import asyncio
-import threading
 import requests
-
-
-# Writes a json file with a dictionary of all named devices
 
 
 def signal_strength(pkt):
@@ -58,18 +49,18 @@ def handle_packet(pkt):
         curmac = curmac.upper()  # Assign variable to packet mac and make it uppercase
         strength = signal_strength(pkt)
         GATEWAY.cache.append({'hash': hash_mac(curmac), 'strength': strength})
-        print(GATEWAY.cache)
 
-        if curmac == 'lol':  # If not registered as ignored
-            print(f"\033[95m Device MAC:{hash_mac(curmac)}  with SSID: {pkt.info} \033[92m  WiFi signal strength {strength} \033[92m \033[0m")
+        if curmac:
+            print(
+                f"\033[95m Device MAC:{hash_mac(curmac)}  with SSID: {pkt.info} \033[92m  WiFi signal strength {strength} \033[92m \033[0m")
 
 
 def main():
-    #print(f" \n  \033[93m  Wifi Scanner Initialized  \033[0m  \n")
-    #t = threading.Thread(target=GATEWAY.send_update())
-    #t.start()
+    # print(f" \n  \033[93m  Wifi Scanner Initialized  \033[0m  \n")
+    # t = threading.Thread(target=GATEWAY.send_update())
+    # t.start()
     sniff(iface='wlp2s0mon', prn=handle_packet)  # start sniffing
-    #t.join()
+    # t.join()
 
 
 if __name__ == '__main__':
