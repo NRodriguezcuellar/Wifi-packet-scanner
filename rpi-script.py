@@ -11,7 +11,7 @@ def send_update():
     print("sending update")
     global output
     api_key = "f015a18b3f8e051eb802ea5e459b67bbaec460f3f4bfacb6d0ff45b1afa1bd47"
-    url = "http://127.0.0.1:8000/update_macs"
+    url = "http://194.88.106.34/update_macs"
     headers = {"Authorization": f"Bearer {api_key}"}
     payload = {"data": output, "time": datetime.now().isoformat()}
     r = requests.post(url, headers=headers, json=payload)
@@ -24,23 +24,16 @@ def hash_mac(plaintext: str) -> str:
     return hashlib.sha256(plaintext.encode()).hexdigest()
 
 
-def get_signal_strength(pkt):
-    radiotap = pkt.getlayer(RadioTap)
-    rssi = radiotap.dBm_AntSignal
-    print(f"RSSI={rssi}")  # RSSI=-84
-    return rssi
-
-
 def handle_packet(pkt):
     if not pkt.haslayer(Dot11ProbeReq):
         return
 
     if pkt.type == 0 and pkt.subtype == 4:  # filters out beacon requests
         unhashed_mac = pkt.addr2.upper()
-        signal_strength = get_signal_strength(pkt)
+        signal_strength = pkt.getlayer(RadioTap).dBm_AntSignal
         mac = hash_mac(unhashed_mac)
 
-        debug = f"\033[95m Device MAC:{mac} - WiFi signal strength {signal_strength} \033[92m \033[0m"
+        debug = f"\033[95m Device MAC:{unhashed_mac} - WiFi signal strength {signal_strength} \033[92m \033[0m"
         print(debug)
         output.append({"hash": mac, "strength": signal_strength})
 
