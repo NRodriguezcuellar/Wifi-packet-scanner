@@ -11,7 +11,7 @@ def send_update():
     print("sending update")
     global output
     api_key = "f015a18b3f8e051eb802ea5e459b67bbaec460f3f4bfacb6d0ff45b1afa1bd47"
-    url = "http://194.88.106.34/update_macs"
+    url = "http://145.89.189.211/macs"
     headers = {"Authorization": f"Bearer {api_key}"}
     payload = {"data": output, "time": datetime.now().isoformat()}
     r = requests.post(url, headers=headers, json=payload)
@@ -33,13 +33,13 @@ def handle_packet(pkt):
         signal_strength = pkt.getlayer(RadioTap).dBm_AntSignal
         mac = hash_mac(unhashed_mac)
 
-        debug = f"\033[95m Device MAC:{unhashed_mac} - WiFi signal strength {signal_strength} \033[92m \033[0m"
+        debug = f"Device MAC:{mac} - WiFi signal strength {signal_strength}"
         print(debug)
         output.append({"hash": mac, "strength": signal_strength})
 
 
 def main():
-    print(f" \n  \033[93m  Wifi Scanner Initialized  \033[0m  \n")
+    print(f" Wifi Scanner Initialized ")
     while True:
         sniff(iface="wlan1mon", prn=handle_packet, timeout=60)  # start sniffing
         send_update()
