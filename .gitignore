@@ -1,5 +1,3 @@
 /venv/
-knowndevices.json
-wifiscanner.log
 .idea
-testapi.py
+env_variables.env

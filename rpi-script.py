@@ -1,30 +1,36 @@
 import hashlib
 from datetime import datetime
-
+from dotenv import load_dotenv
 import requests
+import os
 from scapy.layers.dot11 import Dot11ProbeReq, sniff, RadioTap
 
 output = []
 
+load_dotenv('test.env')  # loads the environment variables from the chosen .env file
 
-def send_update():
+apikey = os.environ.get('APIKEY')  # api key needed to post to the gateway
+request_url = os.environ.get('REQUEST_URL')  # url for the request
+
+
+def send_update():  # function to send the scanned data to the gateway
     print("sending update")
     global output
-    api_key = "f015a18b3f8e051eb802ea5e459b67bbaec460f3f4bfacb6d0ff45b1afa1bd47"
-    url = "http://194.88.106.34/update_macs"
-    headers = {"Authorization": f"Bearer {api_key}"}
-    payload = {"data": output, "time": datetime.now().isoformat()}
-    r = requests.post(url, headers=headers, json=payload)
+    api_key = apikey
+    url = request_url
+    headers = {"Authorization": f"Bearer {api_key}"}  # specify the api key in the header
+    payload = {"data": output, "time": datetime.now().isoformat()}  # the data we scanned and hashed
+    r = requests.post(url, headers=headers, json=payload)  # posting the request
     print(f"sent: {r.status_code}")
-    assert r.ok  # 4debug, add try except for timeout autism in prod
+    # assert r.ok   4debug, add try except for timeout autism in prod
     output = []
 
 
-def hash_mac(plaintext: str) -> str:
+def hash_mac(plaintext: str) -> str:  # function for mac address hashing using sha256
     return hashlib.sha256(plaintext.encode()).hexdigest()
 
 
-def handle_packet(pkt):
+def handle_packet(pkt):  # function for getting the mac adress and signal strength from a probe request packet
     if not pkt.haslayer(Dot11ProbeReq):
         return
 
@@ -33,15 +39,15 @@ def handle_packet(pkt):
         signal_strength = pkt.getlayer(RadioTap).dBm_AntSignal
         mac = hash_mac(unhashed_mac)
 
-        debug = f"\033[95m Device MAC:{unhashed_mac} - WiFi signal strength {signal_strength} \033[92m \033[0m"
-        print(debug)
+        # debug = f" Device MAC:{unhashed_mac} - WiFi signal strength {signal_strength}"
+        # print(debug)
         output.append({"hash": mac, "strength": signal_strength})
 
 
-def main():
-    print(f" \n  \033[93m  Wifi Scanner Initialized  \033[0m  \n")
-    while True:
-        sniff(iface="wlan1mon", prn=handle_packet, timeout=60)  # start sniffing
+def main():  # function that combines sniffing and sending signals to initiate the script
+    print(f"Wifi Scanner Initialized")
+    while True:  # loops between sniffing signals and sending the signals to the gateway
+        sniff(iface="wlan1mon", prn=handle_packet, timeout=60)  # start sniffing and stops at the timout
         send_update()
 
 
