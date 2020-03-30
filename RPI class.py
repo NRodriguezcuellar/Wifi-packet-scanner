@@ -25,7 +25,7 @@ class RPI:  # class that represents the Raspberry Pi
             signal_strength = pkt.getlayer(RadioTap).dBm_AntSignal
             mac = self.hash_mac(unhashed_mac)
 
-            # debug = f" Device MAC:{unhashed_mac} - WiFi signal strength {signal_strength}"
+            #  print(f" Device MAC:{unhashed_mac} - WiFi signal strength {signal_strength}") for testing/debugging
             self.output.append({"hash": mac, "strength": signal_strength})
 
     def sniffer(self, timeout=60, interface='wlan1mon'):
