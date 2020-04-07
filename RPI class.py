@@ -35,9 +35,6 @@ class RPI:  # class that represents the Raspberry Pi
     def send_update(self, apikey, url):  # function to send the scanned data to the gateway
         print("sending update")
 
-        apikey = apikey
-        url = url
-
         headers = {"Authorization": f"Bearer {apikey}"}  # specify the api key in the header
         payload = {"data": self.output, "time": datetime.now().isoformat()}  # the data we scanned and hashed
         r = requests.post(url, headers=headers, json=payload)  # posting the request
